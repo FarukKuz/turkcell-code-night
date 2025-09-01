@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  //output   = "../generated/prisma"
 }
 
 datasource db {
@@ -14,9 +7,101 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model Customer {
+  customer_id   Int      @id @default(autoincrement())
+  customer_name String
+  email         String   @unique
+  password      String
+  created_at    DateTime @default(now())
+  sims          Sim[]
+}
+
+model Sim {
+  sim_id        Int           @id @default(autoincrement())
+  customer_id   Int
+  device_type   String
+  apn           String
+  plan_id       Int?
+  status        String
+  city          String
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  customer      Customer      @relation(fields: [customer_id], references: [customer_id])
+  plan          IotPlan?      @relation(fields: [plan_id], references: [plan_id])
+  deviceProfile DeviceProfile @relation(fields: [device_type], references: [device_type])
+  usages        Usage30d[]
+  actions       ActionsLog[]
+  simAddons     SimAddon[]
+}
+
+model IotPlan {
+  plan_id         Int      @id @default(autoincrement())
+  plan_name       String
+  monthly_quota_mb Int
+  monthly_price   Decimal  @db.Decimal(10,2)
+  overage_per_mb  Decimal  @db.Decimal(5,3)
+  apn             String
+  created_at      DateTime @default(now())
+  sims            Sim[]
+  planAddOnPacks  PlanAddOnPack[]
+}
+
+model Usage30d {
+  id          Int      @id @default(autoincrement())
+  sim_id      Int
+  timestamp   DateTime
+  mb_used     Int
+  roaming_mb  Int
+  created_at  DateTime @default(now())
+  sim         Sim      @relation(fields: [sim_id], references: [sim_id])
+}
+
+model DeviceProfile {
+  device_type           String   @id
+  expected_daily_mb_min Int
+  expected_daily_mb_max Int
+  roaming_expected      Boolean
+  sims                  Sim[]
+}
+
+model AddOnPack {
+  addon_id   Int      @id @default(autoincrement())
+  name       String
+  extra_mb   Int
+  price      Decimal  @db.Decimal(10,2)
+  apn        String
+  created_at DateTime @default(now())
+  simAddons  SimAddon[]
+  planAddOnPacks PlanAddOnPack[]
+}
+
+model SimAddon {
+  id          Int      @id @default(autoincrement())
+  sim_id      Int
+  addon_id    Int
+  purchased_at DateTime
+  expires_at   DateTime
+  status      String   @default("active")
+  sim         Sim      @relation(fields: [sim_id], references: [sim_id])
+  addon       AddOnPack @relation(fields: [addon_id], references: [addon_id])
+}
+
+model ActionsLog {
+  action_id  String   @id
+  sim_id     Int
+  action     String
+  reason     String
+  created_at DateTime @default(now())
+  actor      String
+  status     String
+  metadata   Json
+  sim        Sim      @relation(fields: [sim_id], references: [sim_id])
+}
+
+model PlanAddOnPack {
   id        Int       @id @default(autoincrement())
-  email     String    @unique
-  password  String
-  createdAt DateTime  @default(now())
+  plan_id   Int
+  addon_id  Int
+  plan      IotPlan   @relation(fields: [plan_id], references: [plan_id])
+  addon     AddOnPack @relation(fields: [addon_id], references: [addon_id])
 }

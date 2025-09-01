@@ -1,14 +1,11 @@
 require("dotenv").config();
 const express = require("express");
-const { PrismaClient } = require("@prisma/client");
 const authRoutes = require("./routes/auth.routes");
 
-const prisma = new PrismaClient();
 const app = express();
-
 app.use(express.json());
 
-// Routes
+// Auth route'larını ana uygulamaya ekle
 app.use("/auth", authRoutes);
 
 app.get('/', (req, res) => {

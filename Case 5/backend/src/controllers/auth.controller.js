@@ -2,8 +2,9 @@ const authService = require("../services/auth.service");
 
 async function register(req, res) {
   try {
-    const user = await authService.register(req.body);
-    res.json(user);
+    const { customer_name, email, password } = req.body;
+    const user = await authService.register({ customer_name, email, password });
+    res.status(201).json({ message: "Kayıt başarılı", user });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -11,17 +12,18 @@ async function register(req, res) {
 
 async function login(req, res) {
   try {
-    const token = await authService.login(req.body);
+    const { email, password } = req.body;
+    const token = await authService.login({ email, password });
     res.json({ token });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(401).json({ error: err.message });
   }
 }
 
 async function me(req, res) {
   try {
     const user = await authService.me(req.headers.authorization);
-    res.json(user);
+    res.json({ user });
   } catch (err) {
     res.status(401).json({ error: err.message });
   }
